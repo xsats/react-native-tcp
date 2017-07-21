@@ -340,7 +340,7 @@ TcpSocket.prototype._onClose = function(hadError: boolean): void {
 TcpSocket.prototype._onError = function(error: string): void {
   this._debug('received', 'error');
 
-  this.emit('error', normalizeError(error));
+  this.emit('onerror', normalizeError(error));
   this.destroy();
 };
 
