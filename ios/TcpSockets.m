@@ -85,6 +85,24 @@ RCT_EXPORT_METHOD(connect:(nonnull NSNumber*)cId
     }
 }
 
+RCT_EXPORT_METHOD(connectTls:(nonnull NSNumber*)cId
+                  host:(NSString *)host
+                  port:(int)port
+                  withOptions:(NSDictionary *)options)
+{
+    TcpSocketClient *client = _clients[cId];
+    if (!client) {
+        client = [self createSocket:cId];
+    }
+    
+    NSError *error = nil;
+    if (![client connect:host port:port withOptions:options useSsl:YES error:&error])
+    {
+        [self onError:client withError:error];
+        return;
+    }
+}
+
 RCT_EXPORT_METHOD(write:(nonnull NSNumber*)cId
                   string:(NSString *)base64String
                   callback:(RCTResponseSenderBlock)callback) {

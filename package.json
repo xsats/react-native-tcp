@@ -1,7 +1,7 @@
 {
   "name": "react-native-tcp",
   "version": "3.2.2",
-  "description": "node's net API for react-native",
+  "description": "node's net API for react-native with TLS support",
   "main": "TcpSockets.js",
   "scripts": {
     "start": "exit 1"
@@ -22,6 +22,9 @@
     "sockets",
     "ios",
     "android"
+  ],
+  "contributors": [
+    "Paul Puey <paul@edgesecure.co>"
   ],
   "author": {
     "name": "Andy Prock",

@@ -34,6 +34,7 @@ function TcpSocket(options: ?{ id: ?number }) {
   if (!(this instanceof TcpSocket)) {
     return new TcpSocket(options);
   }
+  this.useSsl = false
 
   if (options && options.id) {
     // e.g. incoming server connections
@@ -120,10 +121,15 @@ TcpSocket.prototype.connect = function(options, callback) : TcpSocket {
   }
 
   this._state = STATE.CONNECTING;
-  this._debug('connecting, host:', host, 'port:', port);
 
   this._destroyed = false;
-  Sockets.connect(this._id, host, Number(port), options);
+  if (this.useSsl) {
+    this._debug('connecting TLS, host:', host, 'port:', port);
+    Sockets.connectTls(this._id, host, Number(port), options);
+  } else {
+    this._debug('connecting, host:', host, 'port:', port);
+    Sockets.connect(this._id, host, Number(port), options);
+  }
 
   return this;
 };
@@ -436,6 +442,10 @@ TcpSocket.prototype._normalizeConnectArgs = function(args) {
   var cb = args[args.length - 1];
   return typeof cb === 'function' ? [options, cb] : [options];
 };
+
+TcpSocket.prototype._enableSsl = function() {
+  this.useSsl = true
+}
 
 // unimplemented net.Socket apis
 TcpSocket.prototype.ref =

@@ -39,6 +39,7 @@ typedef enum RCTTCPError RCTTCPError;
 
 @property (nonatomic, retain) NSNumber * id;
 @property (nonatomic, weak) id<SocketClientDelegate> clientDelegate;
+@property (nonatomic) BOOL useSsl;
 
 ///---------------------------------------------------------------------------------------
 /// @name Class Methods
@@ -62,8 +63,10 @@ typedef enum RCTTCPError RCTTCPError;
  * @param port
  * @param host ip address
  * @param options NSDictionary which can have @"localAddress" and @"localPort" to specify the local interface
+ * @param useSsl BOOL Use SSL/TLS connection
  * @return true if connected, false if there was an error
  */
+- (BOOL)connect:(NSString *)host port:(int)port withOptions:(NSDictionary *)options useSsl:(BOOL)useSsl error:(NSError **)error;
 - (BOOL)connect:(NSString *)host port:(int)port withOptions:(NSDictionary *)options error:(NSError **)error;
 
 /**

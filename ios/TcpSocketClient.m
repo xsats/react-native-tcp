@@ -15,6 +15,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
 {
 @private
     GCDAsyncSocket *_tcpSocket;
+    NSString *_host;
     NSMutableDictionary<NSNumber *, RCTResponseSenderBlock> *_pendingSends;
     NSLock *_lock;
     long _sendTag;
@@ -54,6 +55,12 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
 
 - (BOOL)connect:(NSString *)host port:(int)port withOptions:(NSDictionary *)options error:(NSError **)error
 {
+    return [self connect:host port:port withOptions:options useSsl:NO error:error];
+}
+
+- (BOOL)connect:(NSString *)host port:(int)port withOptions:(NSDictionary *)options useSsl:(BOOL)useSsl error:(NSError **)error
+{
+    self.useSsl = useSsl;
     if (_tcpSocket) {
         if (error) {
             *error = [self badInvocationError:@"this client's socket is already connected"];
@@ -62,6 +69,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         return false;
     }
 
+    _host = host;
     _tcpSocket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:[self methodQueue]];
     [_tcpSocket setUserData: _id];
 
@@ -228,11 +236,32 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         return;
     }
 
-    [_clientDelegate onConnect:self];
-
-    [sock readDataWithTimeout:-1 tag:_id.longValue];
+    if (self.useSsl)
+    {
+        NSMutableDictionary *settings = [NSMutableDictionary dictionary];
+        [settings setObject:@YES forKey:GCDAsyncSocketManuallyEvaluateTrust]; // see GCDAsyncSocket.h
+        [sock startTLS:settings];
+        
+        [_clientDelegate onConnect:self];
+    }
+    else
+    {
+        [_clientDelegate onConnect:self];
+        [sock readDataWithTimeout:-1 tag:_id.longValue];
+    }
 }
 
+- (void)socket:(GCDAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust completionHandler:(void (^)(BOOL shouldTrustPeer))completionHandler {
+    if (completionHandler) completionHandler(YES);
+}
+
+- (void)socketDidSecure:(GCDAsyncSocket *)sock {
+    // start receiving messages
+    if (self.useSsl)
+    {
+        [sock readDataWithTimeout:-1 tag:_id.longValue];
+    }
+}
 - (void)socketDidCloseReadStream:(GCDAsyncSocket *)sock
 {
     // TODO : investigate for half-closed sockets
