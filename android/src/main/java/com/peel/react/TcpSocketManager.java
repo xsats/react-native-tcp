@@ -143,7 +143,7 @@ public final class TcpSocketManager {
                     listener.onError(cId, "unable to open socket");
                     close(cId);
                 } else {
-
+                    close(cId);
                 }
             }
         });
