@@ -79,7 +79,7 @@ client.on('data', function(data) {
 
 ### TLS support
 
-TLS is only supported in the client interface and currently only on iOS. To use TLS, use the `tls.connect()`
+TLS is only supported in the client interface. To use TLS, use the `tls.connect()`
 syntax and not `socket = new tls.Socket()` syntax.
 
 ```
@@ -95,7 +95,7 @@ socket.on('data', (data) => {
 
 ### TODO
 
-add TLS support for Android
+add TLS upgrade support (connect by passing existing socket)
 add select tests from node's tests for net
 
 ## Contributors

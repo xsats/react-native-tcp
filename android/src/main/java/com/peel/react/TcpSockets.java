@@ -108,12 +108,31 @@ public final class TcpSockets extends ReactContextBaseJavaModule implements TcpS
             protected void doInBackgroundGuarded(Void... params) {
                 // NOTE : ignoring options for now, just use the available interface.
                 try {
-                    socketManager.connect(cId, host, port);
+                    socketManager.connect(cId, host, port, false);
                 } catch (UnknownHostException uhe) {
                     FLog.e(TAG, "connect", uhe);
                     onError(cId, uhe.getMessage());
                 } catch (IOException ioe) {
                     FLog.e(TAG, "connect", ioe);
+                    onError(cId, ioe.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    @ReactMethod
+    public void connectTls(final Integer cId, final @Nullable String host, final Integer port, final ReadableMap options) {
+        new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
+            @Override
+            protected void doInBackgroundGuarded(Void... params) {
+                // NOTE : ignoring options for now, just use the available interface.
+                try {
+                    socketManager.connect(cId, host, port, true);
+                } catch (UnknownHostException uhe) {
+                    FLog.e(TAG, "connectTls", uhe);
+                    onError(cId, uhe.getMessage());
+                } catch (IOException ioe) {
+                    FLog.e(TAG, "connectTls", ioe);
                     onError(cId, ioe.getMessage());
                 }
             }
@@ -235,3 +254,4 @@ public final class TcpSockets extends ReactContextBaseJavaModule implements TcpS
         sendEvent("error", eventParams);
     }
 }
+

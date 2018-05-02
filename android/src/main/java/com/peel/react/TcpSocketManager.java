@@ -3,13 +3,7 @@ package com.peel.react;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
 
-import com.koushikdutta.async.AsyncNetworkSocket;
-import com.koushikdutta.async.AsyncServer;
-import com.koushikdutta.async.AsyncServerSocket;
-import com.koushikdutta.async.AsyncSocket;
-import com.koushikdutta.async.ByteBufferList;
-import com.koushikdutta.async.DataEmitter;
-import com.koushikdutta.async.Util;
+import com.koushikdutta.async.*;
 import com.koushikdutta.async.callback.CompletedCallback;
 import com.koushikdutta.async.callback.ConnectCallback;
 import com.koushikdutta.async.callback.DataCallback;
@@ -119,7 +113,7 @@ public final class TcpSocketManager {
         });
     }
 
-    public void connect(final Integer cId, final @Nullable String host, final Integer port) throws UnknownHostException, IOException {
+    public void connect(final Integer cId, final @Nullable String host, final Integer port, final boolean useTls) throws UnknownHostException, IOException {
         // resolve the address
         final InetSocketAddress socketAddress;
         if (host != null) {
@@ -131,22 +125,42 @@ public final class TcpSocketManager {
         mServer.connectSocket(socketAddress, new ConnectCallback() {
             @Override
             public void onConnectCompleted(Exception ex, AsyncSocket socket) {
-                TcpSocketListener listener = mListener.get();
-                mClients.put(cId, socket);
-                if (ex == null) {
-                    setSocketCallbacks(cId, socket);
-
-                    if (listener != null) {
-                        listener.onConnect(cId, socketAddress);
-                    }
-                } else if (listener != null) {
-                    listener.onError(cId, "unable to open socket");
-                    close(cId);
+                if (useTls) {
+                    AsyncSSLSocketWrapper.handshake(socket,
+                            socketAddress.getHostName(),
+                            socketAddress.getPort(),
+                            AsyncSSLSocketWrapper.getDefaultSSLContext().createSSLEngine(),
+                            null,
+                            null,
+                            true,
+                            new AsyncSSLSocketWrapper.HandshakeCallback() {
+                                @Override
+                                public void onHandshakeCompleted(Exception e, AsyncSSLSocket socket) {
+                                    onConnectionCompleted(e, socket, cId, socketAddress);
+                                }
+                            });
                 } else {
-                    close(cId);
+                    onConnectionCompleted(ex, socket, cId, socketAddress);
                 }
             }
         });
+    }
+
+    private void onConnectionCompleted(Exception ex, AsyncSocket socket, Integer cId, InetSocketAddress socketAddress) {
+        TcpSocketListener listener = mListener.get();
+        mClients.put(cId, socket);
+        if (ex == null) {
+            setSocketCallbacks(cId, socket);
+
+            if (listener != null) {
+                listener.onConnect(cId, socketAddress);
+            }
+        } else if (listener != null) {
+            listener.onError(cId, "unable to open socket: " + ex);
+            close(cId);
+        } else {
+            close(cId);
+        }
     }
 
     public void write(final Integer cId, final byte[] data) {
@@ -179,3 +193,4 @@ public final class TcpSocketManager {
         mClients.clear();
     }
 }
+
