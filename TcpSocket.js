@@ -61,6 +61,9 @@ function TcpSocket(options: ?{ id: ?number }) {
 
   this._state = STATE.DISCONNECTED;
 
+  // cache all client.send calls to this array if currently upgrading
+  this._upgradeCache = []
+
   this.read(0);
 }
 
@@ -284,6 +287,12 @@ TcpSocket.prototype._registerEvents = function(): void {
         return;
       }
       this._onError(ev.error);
+    }),
+    this._eventEmitter.addListener('secureConnect', ev => {
+      if (this._id !== ev.id) {
+        return;
+      }
+      this._onSecureConnect();
     })
   ];
 };
@@ -350,6 +359,11 @@ TcpSocket.prototype._onError = function(error: string): void {
   this.destroy();
 };
 
+TcpSocket.prototype._onSecureConnect = function(error: string): void {
+  this._debug('received', 'secureConnect');
+  this.emit('secureConnect');
+};
+
 TcpSocket.prototype.write = function(chunk, encoding, cb) {
   if (typeof chunk !== 'string' && !(Buffer.isBuffer(chunk))) {
     throw new TypeError(
@@ -380,6 +394,12 @@ TcpSocket.prototype._write = function(buffer: any, encoding: ?String, callback: 
   } else {
     throw new TypeError(
       'Invalid data, chunk must be a string or buffer, not ' + typeof buffer);
+  }
+
+  if (this._upgrading) {
+    self._debug('tls in progress, write added to queue');
+    this._upgradeCache.push({ str, callback })
+    return false;
   }
 
   Sockets.write(this._id, str, function(err) {
@@ -447,6 +467,41 @@ TcpSocket.prototype._normalizeConnectArgs = function(args) {
 
 TcpSocket.prototype._enableSsl = function() {
   this.useSsl = true
+}
+
+TcpSocket.prototype._upgradeToSecure = function(callback) {
+  // TODO : if we stored the original requested hostname somewhere, then we could do host name verification
+  var host = null;
+  var port = this._address.port;
+  this._debug('upgrading to TLS, host:', host, 'port:', port);
+  this._upgrading = true;
+  Sockets.upgradeToSecure(this._id, host, port, () => {
+    // emit all cached requests
+    // TODO : get rid of slow timeout - just removing it trips SSLException in the engine
+    setTimeout(() => {
+      while (this._upgradeCache.length) {
+        const cacheElement = this._upgradeCache.shift()
+        this._debug('flushing tls cache queue', cacheElement);
+        const self = this;
+        Sockets.write(this._id, cacheElement.str, function (err) {
+          if (self._timeout) {
+            self._activeTimer(self._timeout.msecs);
+          }
+
+          err = normalizeError(err);
+          if (err) {
+            self._debug('write failed', err);
+            return cacheElement.callback(err);
+          }
+
+          cacheElement.callback();
+        });
+      }
+      this._upgrading = false;
+      callback();
+    }, 2000);
+  });
+  return this;
 }
 
 // unimplemented net.Socket apis

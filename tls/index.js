@@ -19,8 +19,13 @@ exports.createServer = function(connectionListener: (socket: Socket)  => void) :
 
 // TODO : determine how to properly overload this with flow
 exports.connect = exports.createConnection = function() : Socket {
+  if (arguments[0] !== null && typeof arguments[0] === 'object' && arguments[0].socket != null) {
+    var existingSocket = arguments[0].socket;
+    return existingSocket._upgradeToSecure(arguments[1]);
+  }
   var tcpSocket = new Socket();
   tcpSocket._enableSsl()
+  console.log('creating new tls', arguments);
   return Socket.prototype.connect.apply(tcpSocket, tcpSocket._normalizeConnectArgs(arguments));
 };
 

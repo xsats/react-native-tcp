@@ -140,6 +140,16 @@ public final class TcpSockets extends ReactContextBaseJavaModule implements TcpS
     }
 
     @ReactMethod
+    public void upgradeToSecure(final Integer cId, final String host, final Integer port, final Callback callback) {
+        new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
+            @Override
+            protected void doInBackgroundGuarded(Void... params) {
+                socketManager.upgradeToSecure(cId, host, port, callback);
+            }
+        }.execute();
+    }
+
+    @ReactMethod
     public void write(final Integer cId, final String base64String, final Callback callback) {
         new GuardedAsyncTask<Void, Void>(getReactApplicationContext()) {
             @Override
@@ -211,6 +221,17 @@ public final class TcpSockets extends ReactContextBaseJavaModule implements TcpS
         eventParams.putMap("address", addressParams);
 
         sendEvent("connect", eventParams);
+    }
+
+    @Override
+    public void onSecureConnect(Integer id) {
+        if (mShuttingDown) {
+            return;
+        }
+        WritableMap eventParams = Arguments.createMap();
+        eventParams.putInt("id", id);
+
+        sendEvent("secureConnect", eventParams);
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.peel.react;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
 
+import com.facebook.react.bridge.Callback;
 import com.koushikdutta.async.*;
 import com.koushikdutta.async.callback.CompletedCallback;
 import com.koushikdutta.async.callback.ConnectCallback;
@@ -160,6 +161,40 @@ public final class TcpSocketManager {
             close(cId);
         } else {
             close(cId);
+        }
+    }
+
+    public void upgradeToSecure(final Integer cId, String host, Integer port, final Callback callback) {
+        Object existingSocket = mClients.get(cId);
+        if (existingSocket != null && existingSocket instanceof AsyncSocket) {
+            AsyncSSLSocketWrapper.handshake((AsyncSocket) existingSocket,
+                    host,
+                    port,
+                    AsyncSSLSocketWrapper.getDefaultSSLContext().createSSLEngine(),
+                    null,
+                    null,
+                    true,
+                    new AsyncSSLSocketWrapper.HandshakeCallback() {
+                        @Override
+                        public void onHandshakeCompleted(Exception ex, AsyncSSLSocket upgradedSocket) {
+                            TcpSocketListener listener = mListener.get();
+                            mClients.put(cId, upgradedSocket);
+                            if (ex == null) {
+                                setSocketCallbacks(cId, upgradedSocket);
+                                if (listener != null) {
+                                    listener.onSecureConnect(cId);
+                                }
+                                if (callback != null) {
+                                    callback.invoke();
+                                }
+                            } else if (listener != null) {
+                                listener.onError(cId, "unable to upgrade socket to tls: " + ex);
+                                close(cId);
+                            } else {
+                                close(cId);
+                            }
+                        }
+                    });
         }
     }
 
