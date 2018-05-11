@@ -31,6 +31,7 @@ typedef enum RCTTCPError RCTTCPError;
 - (void)onData:(NSNumber *)clientID data:(NSData *)data;
 - (void)onClose:(TcpSocketClient*)client withError:(NSError *)err;
 - (void)onError:(TcpSocketClient*)client withError:(NSError *)err;
+- (void)onSecureConnect:(TcpSocketClient*)client;
 - (NSNumber*)getNextId;
 
 @end
@@ -68,6 +69,8 @@ typedef enum RCTTCPError RCTTCPError;
  */
 - (BOOL)connect:(NSString *)host port:(int)port withOptions:(NSDictionary *)options useSsl:(BOOL)useSsl error:(NSError **)error;
 - (BOOL)connect:(NSString *)host port:(int)port withOptions:(NSDictionary *)options error:(NSError **)error;
+
+- (void)upgradeToSecure:(NSString *)host port:(int)port callback:(RCTResponseSenderBlock) callback;
 
 /**
  * Starts listening on a local host and port

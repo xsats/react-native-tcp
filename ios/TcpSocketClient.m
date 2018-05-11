@@ -17,6 +17,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     GCDAsyncSocket *_tcpSocket;
     NSString *_host;
     NSMutableDictionary<NSNumber *, RCTResponseSenderBlock> *_pendingSends;
+    RCTResponseSenderBlock _pendingUpgrade;
     NSLock *_lock;
     long _sendTag;
 }
@@ -94,6 +95,17 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     }
 
     return result;
+}
+
+- (void)upgradeToSecure:(NSString *)host port:(int)port callback:(RCTResponseSenderBlock) callback;
+{
+    if (callback) {
+        self->_pendingUpgrade = callback;
+    }
+    NSMutableDictionary *settings = [NSMutableDictionary dictionary];
+    [settings setObject:@YES forKey:GCDAsyncSocketManuallyEvaluateTrust]; // see GCDAsyncSocket.h
+    
+    [_tcpSocket startTLSCancelCurrentRead:settings];
 }
 
 - (NSDictionary<NSString *, id> *)getAddress
@@ -192,10 +204,8 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         [self setPendingSend:callback forKey:@(_sendTag)];
     }
     [_tcpSocket writeData:data withTimeout:-1 tag:_sendTag];
-
+    
     _sendTag++;
-
-    [_tcpSocket readDataWithTimeout:-1 tag:_id.longValue];
 }
 
 - (void)end
@@ -213,10 +223,13 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         RCTLogWarn(@"didReadData with nil clientDelegate for %@", [sock userData]);
         return;
     }
-
+    
     [_clientDelegate onData:@(tag) data:data];
 
-    [sock readDataWithTimeout:-1 tag:tag];
+    if (!_pendingUpgrade) {
+        // if we add a read, the special packet will not be picked up in time
+        [sock readDataWithTimeout:-1 tag:tag];
+    }
 }
 
 - (void)socket:(GCDAsyncSocket *)sock didAcceptNewSocket:(GCDAsyncSocket *)newSocket
@@ -252,10 +265,18 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
 }
 
 - (void)socket:(GCDAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust completionHandler:(void (^)(BOOL shouldTrustPeer))completionHandler {
+    // TODO this can't be very secure...
     if (completionHandler) completionHandler(YES);
 }
 
 - (void)socketDidSecure:(GCDAsyncSocket *)sock {
+    RCTLogInfo(@"socket secured");
+    if (self->_pendingUpgrade) {
+        self.useSsl= true;
+        self->_pendingUpgrade(@[]);
+        self->_pendingUpgrade = nil;
+        [_clientDelegate onSecureConnect:self];
+    }
     // start receiving messages
     if (self.useSsl)
     {

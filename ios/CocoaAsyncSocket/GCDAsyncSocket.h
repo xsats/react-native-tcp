@@ -790,6 +790,8 @@ typedef NS_ENUM(NSInteger, GCDAsyncSocketError) {
 **/
 - (void)startTLS:(nullable NSDictionary <NSString*,NSObject*>*)tlsSettings;
 
+- (void)startTLSCancelCurrentRead:(nullable NSDictionary <NSString*,NSObject*>*)tlsSettings;
+
 #pragma mark Advanced
 
 /**
