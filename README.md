@@ -95,6 +95,7 @@ socket.on('data', (data) => {
 
 ### TODO
 
+host name verification on tls upgrade not implemented on android
 add select tests from node's tests for net
 
 ## Contributors

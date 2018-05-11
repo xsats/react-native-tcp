@@ -477,7 +477,6 @@ TcpSocket.prototype._upgradeToSecure = function(callback) {
   this._upgrading = true;
   Sockets.upgradeToSecure(this._id, host, port, () => {
     // emit all cached requests
-    // TODO : get rid of slow timeout - just removing it trips SSLException in the engine
     setTimeout(() => {
       while (this._upgradeCache.length) {
         const cacheElement = this._upgradeCache.shift()
@@ -499,7 +498,7 @@ TcpSocket.prototype._upgradeToSecure = function(callback) {
       }
       this._upgrading = false;
       callback();
-    }, 2000);
+    });
   });
   return this;
 }
