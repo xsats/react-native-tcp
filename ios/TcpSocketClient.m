@@ -103,7 +103,6 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         self->_pendingUpgrade = callback;
     }
     NSMutableDictionary *settings = [NSMutableDictionary dictionary];
-    [settings setObject:@YES forKey:GCDAsyncSocketManuallyEvaluateTrust]; // see GCDAsyncSocket.h
     
     [_tcpSocket startTLSCancelCurrentRead:settings];
 }
@@ -252,7 +251,6 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     if (self.useSsl)
     {
         NSMutableDictionary *settings = [NSMutableDictionary dictionary];
-        [settings setObject:@YES forKey:GCDAsyncSocketManuallyEvaluateTrust]; // see GCDAsyncSocket.h
         [sock startTLS:settings];
         
         [_clientDelegate onConnect:self];
@@ -262,11 +260,6 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         [_clientDelegate onConnect:self];
         [sock readDataWithTimeout:-1 tag:_id.longValue];
     }
-}
-
-- (void)socket:(GCDAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust completionHandler:(void (^)(BOOL shouldTrustPeer))completionHandler {
-    // TODO this can't be very secure...
-    if (completionHandler) completionHandler(YES);
 }
 
 - (void)socketDidSecure:(GCDAsyncSocket *)sock {

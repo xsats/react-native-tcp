@@ -95,7 +95,6 @@ socket.on('data', (data) => {
 
 ### TODO
 
-add TLS upgrade support (connect by passing existing socket)
 add select tests from node's tests for net
 
 ## Contributors
