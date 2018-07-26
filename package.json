@@ -1,5 +1,5 @@
 {
-  "name": "react-native-tcp",
+  "name": "@staltz/react-native-tcp",
   "version": "3.3.0",
   "description": "node's net API for react-native",
   "main": "TcpSockets.js",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PeelTechnologies/react-native-tcp"
+    "url": "https://github.com/staltz/react-native-tcp"
   },
   "keywords": [
     "react-component",
@@ -24,17 +24,15 @@
     "android"
   ],
   "contributors": [
-    "Paul Puey <paul@edgesecure.co>"
+    "Paul Puey <paul@edgesecure.co>",
+    "Andy Prock <aprock@protonmail.com>",
+    "Andre Staltz <contact@staltz.com>"
   ],
-  "author": {
-    "name": "Andy Prock",
-    "email": "aprock@protonmail.com"
-  },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/PeelTechnologies/react-native-tcp/issues"
+    "url": "https://github.com/staltz/react-native-tcp/issues"
   },
-  "homepage": "https://github.com/PeelTechnologies/react-native-tcp",
+  "homepage": "https://github.com/staltz/react-native-tcp",
   "peerDependencies": {
     "react-native": ">=0.40.0"
   },
