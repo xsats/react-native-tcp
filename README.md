@@ -2,8 +2,6 @@
 
 node's [net](https://nodejs.org/api/net.html) API in React Native
 
-This module is used by [Peel](http://www.peel.com/)
-
 ## Install
 
 * Create a new react-native project. [Check react-native getting started](http://facebook.github.io/react-native/docs/getting-started.html#content)
@@ -11,18 +9,13 @@ This module is used by [Peel](http://www.peel.com/)
 * In your project dir:
 
 ```
-npm install react-native-tcp --save
-```
-
-__Note for iOS:__ If your react-native version < 0.40 install with this tag instead:
-```
-npm install react-native-tcp@3.1.0 --save
+npm install @staltz/react-native-tcp --save
 ```
 
 ## Link in the native dependency
 
 ```
-react-native link react-native-tcp
+react-native link @staltz/react-native-tcp
 ```
 
 ## Additional dependencies
@@ -45,8 +38,8 @@ _only if you want to write require('net') or require('tls') in your javascript_
 ```json
 {
   "react-native": {
-    "net": "react-native-tcp",
-    "tls": "react-native-tcp/tls"
+    "net": "@staltz/react-native-tcp",
+    "tls": "@staltz/react-native-tcp/tls"
   }
 }
 ```
@@ -59,8 +52,8 @@ _see/run [index.ios.js/index.android.js](examples/rctsockets) for a complete exa
 var net = require('net');
 var net = require('tls');
 // OR, if not shimming via package.json "react-native" field:
-// var net = require('react-native-tcp')
-// var tls = require('react-native-tcp/tls')
+// var net = require('@staltz/react-native-tcp')
+// var tls = require('@staltz/react-native-tcp/tls')
 
 var server = net.createServer(function(socket) {
   socket.write('excellent!');
@@ -92,14 +85,3 @@ socket.on('data', (data) => {
   console.log('data:' + data.toString('ascii'))
 })
 ```
-
-### TODO
-
-host name verification on tls upgrade not implemented on android
-add select tests from node's tests for net
-
-PR's welcome!
-
-
-
-_originally forked from [react-native-udp](https://github.com/tradle/react-native-udp)_
