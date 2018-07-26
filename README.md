@@ -40,12 +40,13 @@ react-native link react-native-tcp
 
 ### package.json
 
-_only if you want to write require('net') in your javascript_
+_only if you want to write require('net') or require('tls') in your javascript_
 
 ```json
 {
-  "browser": {
-    "net": "react-native-tcp"
+  "react-native": {
+    "net": "react-native-tcp",
+    "tls": "react-native-tcp/tls"
   }
 }
 ```
@@ -56,8 +57,10 @@ _see/run [index.ios.js/index.android.js](examples/rctsockets) for a complete exa
 
 ```js
 var net = require('net');
-// OR, if not shimming via package.json "browser" field:
+var net = require('tls');
+// OR, if not shimming via package.json "react-native" field:
 // var net = require('react-native-tcp')
+// var tls = require('react-native-tcp/tls')
 
 var server = net.createServer(function(socket) {
   socket.write('excellent!');
@@ -74,8 +77,25 @@ client.on('data', function(data) {
 });
 ```
 
+### TLS support
+
+TLS is only supported in the client interface. To use TLS, use the `tls.connect()`
+syntax and not `socket = new tls.Socket()` syntax.
+
+```
+const socket = tls.connect({port: 50002, host:'electrum.villocq.com', rejectUnauthorized: false}, () => {
+  socket.write('{ "id": 5, "method": "blockchain.estimatefee", "params": [2] }\n')
+  console.log('Connected')
+})
+
+socket.on('data', (data) => {
+  console.log('data:' + data.toString('ascii'))
+})
+```
+
 ### TODO
 
+host name verification on tls upgrade not implemented on android
 add select tests from node's tests for net
 
 PR's welcome!

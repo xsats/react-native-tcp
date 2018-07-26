@@ -34,6 +34,7 @@ function TcpSocket(options: ?{ id: ?number }) {
   if (!(this instanceof TcpSocket)) {
     return new TcpSocket(options);
   }
+  this.useSsl = false
 
   if (options && options.id) {
     // e.g. incoming server connections
@@ -60,17 +61,20 @@ function TcpSocket(options: ?{ id: ?number }) {
 
   this._state = STATE.DISCONNECTED;
 
+  // cache all client.send calls to this array if currently upgrading
+  this._upgradeCache = []
+
   this.read(0);
 }
 
 util.inherits(TcpSocket, stream.Duplex);
 
 TcpSocket.prototype._debug = function() {
-  if (__DEV__) {
-    var args = [].slice.call(arguments);
-    args.unshift('socket-' + this._id);
-    console.log.apply(console, args);
-  }
+  // if (__DEV__) {
+  //   var args = [].slice.call(arguments);
+  //   args.unshift('socket-' + this._id);
+  //   console.log.apply(console, args);
+  // }
 };
 
 // TODO : determine how to properly overload this with flow
@@ -120,10 +124,15 @@ TcpSocket.prototype.connect = function(options, callback) : TcpSocket {
   }
 
   this._state = STATE.CONNECTING;
-  this._debug('connecting, host:', host, 'port:', port);
 
   this._destroyed = false;
-  Sockets.connect(this._id, host, Number(port), options);
+  if (this.useSsl) {
+    this._debug('connecting TLS, host:', host, 'port:', port);
+    Sockets.connectTls(this._id, host, Number(port), options);
+  } else {
+    this._debug('connecting, host:', host, 'port:', port);
+    Sockets.connect(this._id, host, Number(port), options);
+  }
 
   return this;
 };
@@ -278,6 +287,12 @@ TcpSocket.prototype._registerEvents = function(): void {
         return;
       }
       this._onError(ev.error);
+    }),
+    this._eventEmitter.addListener('secureConnect', ev => {
+      if (this._id !== ev.id) {
+        return;
+      }
+      this._onSecureConnect();
     })
   ];
 };
@@ -340,8 +355,13 @@ TcpSocket.prototype._onClose = function(hadError: boolean): void {
 TcpSocket.prototype._onError = function(error: string): void {
   this._debug('received', 'error');
 
-  this.emit('error', normalizeError(error));
+  this.emit('onerror', normalizeError(error));
   this.destroy();
+};
+
+TcpSocket.prototype._onSecureConnect = function(error: string): void {
+  this._debug('received', 'secureConnect');
+  this.emit('secureConnect');
 };
 
 TcpSocket.prototype.write = function(chunk, encoding, cb) {
@@ -356,13 +376,15 @@ TcpSocket.prototype.write = function(chunk, encoding, cb) {
 TcpSocket.prototype._write = function(buffer: any, encoding: ?String, callback: ?(err: ?Error) => void) : boolean {
   var self = this;
 
+  callback = callback || noop;
+
   if (this._state === STATE.DISCONNECTED) {
-    throw new Error('Socket is not connected.');
+    return callback()
+    // return callback(new Error('Socket is not connected.'));
   } else if (this._state === STATE.CONNECTING) {
     // we're ok, GCDAsyncSocket handles queueing internally
   }
 
-  callback = callback || noop;
   var str;
   if (typeof buffer === 'string') {
     self._debug('socket.WRITE(): encoding as base64');
@@ -372,6 +394,12 @@ TcpSocket.prototype._write = function(buffer: any, encoding: ?String, callback: 
   } else {
     throw new TypeError(
       'Invalid data, chunk must be a string or buffer, not ' + typeof buffer);
+  }
+
+  if (this._upgrading) {
+    self._debug('tls in progress, write added to queue');
+    this._upgradeCache.push({ str, callback })
+    return false;
   }
 
   Sockets.write(this._id, str, function(err) {
@@ -436,6 +464,44 @@ TcpSocket.prototype._normalizeConnectArgs = function(args) {
   var cb = args[args.length - 1];
   return typeof cb === 'function' ? [options, cb] : [options];
 };
+
+TcpSocket.prototype._enableSsl = function() {
+  this.useSsl = true
+}
+
+TcpSocket.prototype._upgradeToSecure = function(callback) {
+  // TODO : if we stored the original requested hostname somewhere, then we could do host name verification
+  var host = null;
+  var port = this._address.port;
+  this._debug('upgrading to TLS, host:', host, 'port:', port);
+  this._upgrading = true;
+  Sockets.upgradeToSecure(this._id, host, port, () => {
+    // emit all cached requests
+    setTimeout(() => {
+      while (this._upgradeCache.length) {
+        const cacheElement = this._upgradeCache.shift()
+        this._debug('flushing tls cache queue', cacheElement);
+        const self = this;
+        Sockets.write(this._id, cacheElement.str, function (err) {
+          if (self._timeout) {
+            self._activeTimer(self._timeout.msecs);
+          }
+
+          err = normalizeError(err);
+          if (err) {
+            self._debug('write failed', err);
+            return cacheElement.callback(err);
+          }
+
+          cacheElement.callback();
+        });
+      }
+      this._upgrading = false;
+      callback();
+    });
+  });
+  return this;
+}
 
 // unimplemented net.Socket apis
 TcpSocket.prototype.ref =

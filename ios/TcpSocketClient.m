@@ -15,7 +15,9 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
 {
 @private
     GCDAsyncSocket *_tcpSocket;
+    NSString *_host;
     NSMutableDictionary<NSNumber *, RCTResponseSenderBlock> *_pendingSends;
+    RCTResponseSenderBlock _pendingUpgrade;
     NSLock *_lock;
     long _sendTag;
 }
@@ -54,6 +56,12 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
 
 - (BOOL)connect:(NSString *)host port:(int)port withOptions:(NSDictionary *)options error:(NSError **)error
 {
+    return [self connect:host port:port withOptions:options useSsl:NO error:error];
+}
+
+- (BOOL)connect:(NSString *)host port:(int)port withOptions:(NSDictionary *)options useSsl:(BOOL)useSsl error:(NSError **)error
+{
+    self.useSsl = useSsl;
     if (_tcpSocket) {
         if (error) {
             *error = [self badInvocationError:@"this client's socket is already connected"];
@@ -62,6 +70,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         return false;
     }
 
+    _host = host;
     _tcpSocket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:[self methodQueue]];
     [_tcpSocket setUserData: _id];
 
@@ -86,6 +95,16 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     }
 
     return result;
+}
+
+- (void)upgradeToSecure:(NSString *)host port:(int)port callback:(RCTResponseSenderBlock) callback;
+{
+    if (callback) {
+        self->_pendingUpgrade = callback;
+    }
+    NSMutableDictionary *settings = [NSMutableDictionary dictionary];
+
+    [_tcpSocket startTLSCancelCurrentRead:settings];
 }
 
 - (NSDictionary<NSString *, id> *)getAddress
@@ -184,10 +203,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         [self setPendingSend:callback forKey:@(_sendTag)];
     }
     [_tcpSocket writeData:data withTimeout:-1 tag:_sendTag];
-
     _sendTag++;
-
-    [_tcpSocket readDataWithTimeout:-1 tag:_id.longValue];
 }
 
 - (void)end
@@ -208,7 +224,10 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
 
     [_clientDelegate onData:@(tag) data:data];
 
-    [sock readDataWithTimeout:-1 tag:tag];
+    if (!_pendingUpgrade) {
+        // if we add a read, the special packet will not be picked up in time
+        [sock readDataWithTimeout:-1 tag:tag];
+    }
 }
 
 - (void)socket:(GCDAsyncSocket *)sock didAcceptNewSocket:(GCDAsyncSocket *)newSocket
@@ -228,11 +247,34 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         return;
     }
 
-    [_clientDelegate onConnect:self];
+    if (self.useSsl)
+    {
+        NSMutableDictionary *settings = [NSMutableDictionary dictionary];
+        [sock startTLS:settings];
 
-    [sock readDataWithTimeout:-1 tag:_id.longValue];
+        [_clientDelegate onConnect:self];
+    }
+    else
+    {
+        [_clientDelegate onConnect:self];
+        [sock readDataWithTimeout:-1 tag:_id.longValue];
+    }
 }
 
+- (void)socketDidSecure:(GCDAsyncSocket *)sock {
+    RCTLogInfo(@"socket secured");
+    if (self->_pendingUpgrade) {
+        self.useSsl= true;
+        self->_pendingUpgrade(@[]);
+        self->_pendingUpgrade = nil;
+        [_clientDelegate onSecureConnect:self];
+    }
+    // start receiving messages
+    if (self.useSsl)
+    {
+        [sock readDataWithTimeout:-1 tag:_id.longValue];
+    }
+}
 - (void)socketDidCloseReadStream:(GCDAsyncSocket *)sock
 {
     // TODO : investigate for half-closed sockets

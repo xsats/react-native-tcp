@@ -10,6 +10,7 @@ public interface TcpSocketListener {
     void onConnection(Integer serverId, Integer clientId, InetSocketAddress socketAddress);
 
     // client and server
+    void onSecureConnect(Integer id);
     void onConnect(Integer id, InetSocketAddress socketAddress);
     void onData(Integer id, byte[] data);
     void onClose(Integer id, String error);
