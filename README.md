@@ -11,6 +11,14 @@ node's [net](https://nodejs.org/api/net.html) API in React Native
 ```
 npm install @staltz/react-native-tcp --save
 ```
+## if using Cocoapods
+
+Update the following line with your path to `node_modules/` and add it to your
+podfile:
+
+```ruby
+pod 'TcpSockets', :path => '../node_modules/react-native-tcp'
+```
 
 ## Link in the native dependency
 
