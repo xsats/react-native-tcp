@@ -1,12 +1,11 @@
 {
-  "name": "@staltz/react-native-tcp",
-  "version": "3.3.1",
+  "name": "@hawkingnetwork/react-native-tcp",
+  "version": "3.3.2",
   "description": "node's net API for react-native",
   "main": "TcpSockets.js",
   "author": {
-    "name": "Table XI"
+    "name": "Hawking"
   },
-
   "scripts": {
     "start": "exit 1"
   },
@@ -15,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/staltz/react-native-tcp"
+    "url": "https://github.com/hawkingnetwork/react-native-tcp"
   },
   "keywords": [
     "react-component",
@@ -44,13 +43,13 @@
     "access": "public"
   },
   "dependencies": {
-    "base64-js": "0.0.8",
-    "buffer": "^5.0.0",
-    "events": "^1.0.2",
-    "ip-regex": "^1.0.3",
-    "process": "^0.11.9",
-    "util": "^0.10.3",
-    "stream-browserify": "^1.0.0"
+    "base64-js": "1.3.0",
+    "buffer": "5.2.1",
+    "events": "3.0.0",
+    "ip-regex": "3.0.0",
+    "process": "0.11.10",
+    "stream-browserify": "2.0.1",
+    "util": "0.11.1"
   },
   "devDependencies": {
     "babel-eslint": "^4.1.6",
@@ -58,8 +57,8 @@
   },
   "rnpm": {
     "android": {
-      "packageName": "react-native-tcp",
-      "packageFolder": "@staltz/react-native-tcp"
+      "packageName": "com.peel.react",
+      "packageFolder": "@hawkingnetwork/react-native-tcp"
     }
   }
 }
