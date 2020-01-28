@@ -6794,7 +6794,9 @@ static OSStatus SSLWriteFunction(SSLConnectionRef connection, const void *data, 
 		return;
 	}
 
-
+    // Force SSL to accept all HTTPS certs.
+    status = SSLSetSessionOption(sslContext, kSSLSessionOptionBreakOnServerAuth, true);
+    
 	BOOL shouldManuallyEvaluateTrust = [[tlsSettings objectForKey:GCDAsyncSocketManuallyEvaluateTrust] boolValue];
 	if (shouldManuallyEvaluateTrust)
 	{

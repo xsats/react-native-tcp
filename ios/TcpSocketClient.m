@@ -306,4 +306,10 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     return dispatch_get_main_queue();
 }
 
+- (void)socket:(GCDAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust
+completionHandler:(void (^)(BOOL shouldTrustPeer))completionHandler
+{
+    completionHandler(YES);
+}
+
 @end

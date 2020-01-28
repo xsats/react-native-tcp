@@ -104,5 +104,8 @@ typedef enum RCTTCPError RCTTCPError;
  */
 - (void)destroy;
 
+- (void)socket:(GCDAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust
+completionHandler:(void (^)(BOOL shouldTrustPeer))completionHandler;
+
 
 @end

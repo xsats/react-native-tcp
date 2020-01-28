@@ -8,8 +8,11 @@
 
 'use strict';
 
-global.process = require('process'); // needed to make stream-browserify happy
-var Buffer = global.Buffer = global.Buffer || require('buffer').Buffer;
+if(!(global.process && global.process.nextTick)){
+  console.log('WHY AM I HERE?');
+  global.process = require('process'); // needed to make stream-browserify happy
+}
+var Buffer = global.Buffer || require('buffer').Buffer;
 
 var util = require('util');
 var stream = require('stream-browserify');
@@ -70,11 +73,11 @@ function TcpSocket(options: ?{ id: ?number }) {
 util.inherits(TcpSocket, stream.Duplex);
 
 TcpSocket.prototype._debug = function() {
-  // if (__DEV__) {
-  //   var args = [].slice.call(arguments);
-  //   args.unshift('socket-' + this._id);
-  //   console.log.apply(console, args);
-  // }
+  if (__DEV__) {
+    var args = [].slice.call(arguments);
+    args.unshift('socket-' + this._id);
+    console.log.apply(console, args);
+  }
 };
 
 // TODO : determine how to properly overload this with flow
@@ -353,7 +356,7 @@ TcpSocket.prototype._onClose = function(hadError: boolean): void {
 };
 
 TcpSocket.prototype._onError = function(error: string): void {
-  this._debug('received', 'error');
+  this._debug('received', `error: ${error}`);
 
   this.emit('onerror', normalizeError(error));
   this.destroy();
@@ -386,11 +389,16 @@ TcpSocket.prototype._write = function(buffer: any, encoding: ?String, callback: 
   }
 
   var str;
+  console.log(buffer);
   if (typeof buffer === 'string') {
     self._debug('socket.WRITE(): encoding as base64');
     str = Base64Str.encode(buffer);
   } else if (Buffer.isBuffer(buffer)) {
     str = buffer.toString('base64');
+  } else if (buffer instanceof Uint8Array) {
+    self._debug('socket.WRITE(): encoding from UInt8Array');
+    str = Base64Str.encode(Utf8ArrayToStr(buffer));
+    self._debug(str);
   } else {
     throw new TypeError(
       'Invalid data, chunk must be a string or buffer, not ' + typeof buffer);
@@ -418,6 +426,40 @@ TcpSocket.prototype._write = function(buffer: any, encoding: ?String, callback: 
 
   return true;
 };
+
+function Utf8ArrayToStr(array) {
+  var out, i, len, c;
+  var char2, char3;
+
+  out = "";
+  len = array.length;
+  i = 0;
+  while(i < len) {
+  c = array[i++];
+  switch(c >> 4)
+  { 
+    case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+      // 0xxxxxxx
+      out += String.fromCharCode(c);
+      break;
+    case 12: case 13:
+      // 110x xxxx   10xx xxxx
+      char2 = array[i++];
+      out += String.fromCharCode(((c & 0x1F) << 6) | (char2 & 0x3F));
+      break;
+    case 14:
+      // 1110 xxxx  10xx xxxx  10xx xxxx
+      char2 = array[i++];
+      char3 = array[i++];
+      out += String.fromCharCode(((c & 0x0F) << 12) |
+                     ((char2 & 0x3F) << 6) |
+                     ((char3 & 0x3F) << 0));
+      break;
+  }
+  }
+
+  return out;
+}
 
 function setConnected(socket: TcpSocket, address: { port: number, address: string, family: string } ) {
   socket.writable = socket.readable = true;
