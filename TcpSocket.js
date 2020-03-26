@@ -389,7 +389,6 @@ TcpSocket.prototype._write = function(buffer: any, encoding: ?String, callback: 
   }
 
   var str;
-  console.log(buffer);
   if (typeof buffer === 'string') {
     self._debug('socket.WRITE(): encoding as base64');
     str = Base64Str.encode(buffer);
