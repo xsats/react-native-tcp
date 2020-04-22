@@ -79,7 +79,7 @@
   ],
   "license": "MIT",
   "main": "TcpSockets.js",
-  "name": "photon-react-native-tcp",
+  "name": "@photon/react-native-tcp",
   "peerDependencies": {
     "react-native": ">=0.40.0"
   },
