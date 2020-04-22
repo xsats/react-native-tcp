@@ -33,7 +33,7 @@
     "net": "./TcpSockets.js"
   },
   "bugs": {
-    "url": "https://github.com/staltz/react-native-tcp/issues"
+    "url": "https://github.com/photon-sdk/photon-react-native-tcp/issues"
   },
   "bundleDependencies": false,
   "contributors": [
@@ -65,7 +65,7 @@
     "babel-eslint": "^4.1.6",
     "eslint-plugin-react": "^3.11.3"
   },
-  "homepage": "https://github.com/staltz/react-native-tcp",
+  "homepage": "https://github.com/photon-sdk/photon-react-native-tcp",
   "keywords": [
     "react-component",
     "reactnative",
@@ -87,7 +87,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hawkingnetwork/react-native-tcp.git"
+    "url": "git+https://github.com/photon-sdk/photon-react-native-tcp.git"
   },
   "scripts": {
     "start": "exit 1"
