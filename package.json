@@ -29,8 +29,9 @@
   "author": {
     "name": "Hawking"
   },
-  "browser": {
-    "net": "./TcpSockets.js"
+  "react-native": {
+    "net": "./TcpSockets.js",
+    "tls": "./tls/index.js"
   },
   "bugs": {
     "url": "https://github.com/photon-sdk/photon-react-native-tcp/issues"
