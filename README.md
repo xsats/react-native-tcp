@@ -9,7 +9,7 @@ node's [net](https://nodejs.org/api/net.html) API in React Native
 - In your project dir:
 
 ```
-npm install @hawkingnetwork/react-native-tcp --save
+npm install photon-react-native-tcp --save
 ```
 
 ## if using Cocoapods
@@ -24,7 +24,7 @@ pod 'TcpSockets', :path => '../node_modules/react-native-tcp'
 ## Link in the native dependency
 
 ```
-react-native link @hawkingnetwork/react-native-tcp
+react-native link photon-react-native-tcp
 ```
 
 ## Additional dependencies
@@ -47,8 +47,8 @@ _only if you want to write require('net') or require('tls') in your javascript_
 ```json
 {
   "react-native": {
-    "net": "@hawkingnetwork/react-native-tcp",
-    "tls": "@hawkingnetwork/react-native-tcp/tls"
+    "net": "photon-react-native-tcp",
+    "tls": "photon-react-native-tcp/tls"
   }
 }
 ```
@@ -61,8 +61,8 @@ _see/run [index.ios.js/index.android.js](examples/rctsockets) for a complete exa
 var net = require("net");
 var net = require("tls");
 // OR, if not shimming via package.json "react-native" field:
-// var net = require('@hawkingnetwork/react-native-tcp')
-// var tls = require('@hawkingnetwork/react-native-tcp/tls')
+// var net = require('photon-react-native-tcp')
+// var tls = require('photon-react-native-tcp/tls')
 
 var server = net
   .createServer(function(socket) {
