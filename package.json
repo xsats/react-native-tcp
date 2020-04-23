@@ -7,6 +7,9 @@
     "type": "git",
     "url": "git+https://github.com/photon-sdk/react-native-tcp.git"
   },
+  "author": {
+    "name": "Hawking"
+  },
   "main": "./TcpSockets.js",
   "react-native": {
     "net": "./TcpSockets.js",
