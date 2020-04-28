@@ -1,5 +1,5 @@
 //
-//  GCDAsyncSocket.m
+//  GCDAsyncSocketCustomSSL.m
 //  
 //  This class is in the public domain.
 //  Originally created by Robbie Hanson in Q4 2010.
@@ -8,7 +8,7 @@
 //  https://github.com/robbiehanson/CocoaAsyncSocket
 //
 
-#import "GCDAsyncSocket.h"
+#import "GCDAsyncSocketCustomSSL.h"
 
 #if TARGET_OS_IPHONE
 #import <CFNetwork/CFNetwork.h>
