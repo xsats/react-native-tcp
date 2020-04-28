@@ -36,7 +36,7 @@ typedef enum RCTTCPError RCTTCPError;
 
 @end
 
-@interface TcpSocketClient : NSObject<GCDAsyncSocketDelegate>
+@interface TcpSocketClient : NSObject<GCDCSSLAsyncSocketDelegate>
 
 @property (nonatomic, retain) NSNumber * id;
 @property (nonatomic, weak) id<SocketClientDelegate> clientDelegate;
@@ -104,7 +104,7 @@ typedef enum RCTTCPError RCTTCPError;
  */
 - (void)destroy;
 
-- (void)socket:(GCDAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust
+- (void)socket:(GCDCSSLAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust
 completionHandler:(void (^)(BOOL shouldTrustPeer))completionHandler;
 
 
