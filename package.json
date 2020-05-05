@@ -1,6 +1,6 @@
 {
   "name": "@photon-sdk/react-native-tcp",
-  "version": "6.1.0",
+  "version": "6.2.0",
   "description": "node's net API for react-native",
   "license": "MIT",
   "repository": {
