@@ -14,7 +14,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
 @interface TcpSocketClient()
 {
 @private
-    GCDAsyncSocket *_tcpSocket;
+    GCDCSSLAsyncSocket *_tcpSocket;
     NSString *_host;
     NSMutableDictionary<NSNumber *, RCTResponseSenderBlock> *_pendingSends;
     RCTResponseSenderBlock _pendingUpgrade;
@@ -23,7 +23,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
 }
 
 - (id)initWithClientId:(NSNumber *)clientID andConfig:(id<SocketClientDelegate>)aDelegate;
-- (id)initWithClientId:(NSNumber *)clientID andConfig:(id<SocketClientDelegate>)aDelegate andSocket:(GCDAsyncSocket*)tcpSocket;
+- (id)initWithClientId:(NSNumber *)clientID andConfig:(id<SocketClientDelegate>)aDelegate andSocket:(GCDCSSLAsyncSocket*)tcpSocket;
 
 @end
 
@@ -39,7 +39,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     return [self initWithClientId:clientID andConfig:aDelegate andSocket:nil];
 }
 
-- (id)initWithClientId:(NSNumber *)clientID andConfig:(id<SocketClientDelegate>)aDelegate andSocket:(GCDAsyncSocket*)tcpSocket;
+- (id)initWithClientId:(NSNumber *)clientID andConfig:(id<SocketClientDelegate>)aDelegate andSocket:(GCDCSSLAsyncSocket*)tcpSocket;
 {
     self = [super init];
     if (self) {
@@ -71,7 +71,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     }
 
     _host = host;
-    _tcpSocket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:[self methodQueue]];
+    _tcpSocket = [[GCDCSSLAsyncSocket alloc] initWithDelegate:self delegateQueue:[self methodQueue]];
     [_tcpSocket setUserData: _id];
 
     BOOL result = false;
@@ -137,10 +137,10 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         return false;
     }
 
-    _tcpSocket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:[self methodQueue]];
+    _tcpSocket = [[GCDCSSLAsyncSocket alloc] initWithDelegate:self delegateQueue:[self methodQueue]];
     [_tcpSocket setUserData: _id];
 
-    // GCDAsyncSocket doesn't recognize 0.0.0.0
+    // GCDCSSLAsyncSocket doesn't recognize 0.0.0.0
     if ([@"0.0.0.0" isEqualToString: host]) {
         host = @"localhost";
     }
@@ -186,7 +186,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     }
 }
 
-- (void)socket:(GCDAsyncSocket *)sock didWriteDataWithTag:(long)msgTag
+- (void)socket:(GCDCSSLAsyncSocket *)sock didWriteDataWithTag:(long)msgTag
 {
     NSNumber* tagNum = [NSNumber numberWithLong:msgTag];
     RCTResponseSenderBlock callback = [self getPendingSend:tagNum];
@@ -216,7 +216,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     [_tcpSocket disconnect];
 }
 
-- (void)socket:(GCDAsyncSocket *)sock didReadData:(NSData *)data withTag:(long)tag {
+- (void)socket:(GCDCSSLAsyncSocket *)sock didReadData:(NSData *)data withTag:(long)tag {
     if (!_clientDelegate) {
         RCTLogWarn(@"didReadData with nil clientDelegate for %@", [sock userData]);
         return;
@@ -230,7 +230,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     }
 }
 
-- (void)socket:(GCDAsyncSocket *)sock didAcceptNewSocket:(GCDAsyncSocket *)newSocket
+- (void)socket:(GCDCSSLAsyncSocket *)sock didAcceptNewSocket:(GCDCSSLAsyncSocket *)newSocket
 {
     TcpSocketClient *inComing = [[TcpSocketClient alloc] initWithClientId:[_clientDelegate getNextId]
                                                                 andConfig:_clientDelegate
@@ -240,7 +240,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     [newSocket readDataWithTimeout:-1 tag:inComing.id.longValue];
 }
 
-- (void)socket:(GCDAsyncSocket *)sock didConnectToHost:(NSString *)host port:(uint16_t)port
+- (void)socket:(GCDCSSLAsyncSocket *)sock didConnectToHost:(NSString *)host port:(uint16_t)port
 {
     if (!_clientDelegate) {
         RCTLogWarn(@"didConnectToHost with nil clientDelegate for %@", [sock userData]);
@@ -261,7 +261,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     }
 }
 
-- (void)socketDidSecure:(GCDAsyncSocket *)sock {
+- (void)socketDidSecure:(GCDCSSLAsyncSocket *)sock {
     RCTLogInfo(@"socket secured");
     if (self->_pendingUpgrade) {
         self.useSsl= true;
@@ -275,21 +275,21 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
         [sock readDataWithTimeout:-1 tag:_id.longValue];
     }
 }
-- (void)socketDidCloseReadStream:(GCDAsyncSocket *)sock
+- (void)socketDidCloseReadStream:(GCDCSSLAsyncSocket *)sock
 {
     // TODO : investigate for half-closed sockets
     // for now close the stream completely
     [sock disconnect];
 }
 
-- (void)socketDidDisconnect:(GCDAsyncSocket *)sock withError:(NSError *)err
+- (void)socketDidDisconnect:(GCDCSSLAsyncSocket *)sock withError:(NSError *)err
 {
     if (!_clientDelegate) {
         RCTLogWarn(@"socketDidDisconnect with nil clientDelegate for %@", [sock userData]);
         return;
     }
 
-    [_clientDelegate onClose:[sock userData] withError:(!err || err.code == GCDAsyncSocketClosedError ? nil : err)];
+    [_clientDelegate onClose:[sock userData] withError:(!err || err.code == GCDCSSLAsyncSocketClosedError ? nil : err)];
 }
 
 - (NSError *)badInvocationError:(NSString *)errMsg
@@ -306,7 +306,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
     return dispatch_get_main_queue();
 }
 
-- (void)socket:(GCDAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust
+- (void)socket:(GCDCSSLAsyncSocket *)sock didReceiveTrust:(SecTrustRef)trust
 completionHandler:(void (^)(BOOL shouldTrustPeer))completionHandler
 {
     completionHandler(YES);
